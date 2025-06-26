@@ -17,4 +17,10 @@
       <Content Include="Dockerfile" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="Giraffe.ViewEngine">
+        <HintPath>..\..\..\.nuget\packages\giraffe.viewengine\1.4.0\lib\net5.0\Giraffe.ViewEngine.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

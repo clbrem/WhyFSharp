@@ -21,7 +21,6 @@
         </Content>
         <Content Include="JustFSharpThings.md" />
         <Content Include="Dockerfile" />
-        <Content Include="database.txt" />
         <Content Include="WebRoot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

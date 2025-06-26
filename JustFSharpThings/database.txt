@@ -1,4 +1,0 @@
-0c8043f1-c988-4507-862c-1691f55574d9: hi-there
-3c9bfcc5-be8e-42c9-963e-6983b1efdd68: 'I am a teapot'
-5e6aa1f3-1b64-4f19-9aec-8c62c406b562: I am a teapot
-9ae6d379-173d-4fa0-b40c-f70a60998696: it was the best of times, it was the worst of times

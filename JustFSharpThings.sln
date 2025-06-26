@@ -4,6 +4,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "JustFSharpThings", "JustFSh
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "JustFSharpThings.Client", "JustFSharpThings.Client\JustFSharpThings.Client.fsproj", "{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "JustFSharpThings.Mailbox", "JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj", "{67296A11-7CDE-4176-9F3F-E67B704A85B3}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "JustFSharpThings.Test", "JustFSharpThings.Test\JustFSharpThings.Test.fsproj", "{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
