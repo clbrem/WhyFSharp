@@ -1,18 +1,22 @@
-# Ten Things I Like about the F# Language
+# Ten Things I Like about the F#
 1. **Table Stakes**
-  - .NET language (compiles to IL)
-  - ML family (OCaml, Haskell, Rust, etc.)  
-  - Functional (First class functions, immutability, etc.)
-  - Object-oriented 
-  - Indentation based syntax (No braces, no semicolons)
-  - Linear compiler
-  - Partial application 
-   ```fsharp
-    let add x y = x + y
-    let f = add 2
-    f 3 // 5
-   ```
-2. **Type Inference**
+   - Functional (First class functions, immutability, etc.)
+   - Object-oriented  
+   - ML family (OCaml, Haskell, Rust, etc.)
+   - .NET language (compiles to IL)      
+   - Indentation based syntax (No braces, no semicolons)
+   - Linear compiler
+   - Partial application 
+     ```fsharp
+     let add x y = x + y
+     let f = add 2
+     f 3 // 5
+     ```
+   - Pipe operator
+     ```fsharp
+     3 |> add 2 |> add 5 // 10        
+     ```
+2. **Type Inference** 
 3. **Railway Oriented Programming** 
 4. **Union Types**
 5. **Pattern Matching**

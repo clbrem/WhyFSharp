@@ -86,11 +86,11 @@ let main argv =
     let argList = 
         argv |> Array.toList
     let rnd = Random()
-    let rec loop client keyset : Task=
-                    task {
+    let rec loop client keyset =
+                    async {
                         let action = Client.Action.random keyset rnd 
                         try
-                            let! key = Client.send client action 
+                            let! key = Client.send client action |> Async.AwaitTask  
                             return! loop client (Set.add key keyset)
                         with
                         | ex  ->
@@ -99,12 +99,14 @@ let main argv =
                     }    
     
     let toDo =  
-        task {
+        async {
             use client = Client.client()            
             match argList with
             | _ ->
-                [|for _ in 1..500 do loop client Set.empty|] |> Task.WaitAll 
+                let! _ = [|for _ in 1..500 do loop client Set.empty|] |> Async.Parallel   
                 return 0                
         }
-    toDo.GetAwaiter().GetResult()
+    (toDo
+    |> Async.StartAsTask
+    ).GetAwaiter().GetResult()
     

@@ -41,8 +41,6 @@ module Database =
         readLines db
     let write (db: StreamWriter) (key: Guid) (value: string) =
             do db.WriteLine $"{key}: {value}"
-            
-        
 
 // ---------------------------------
 // Web app
@@ -51,15 +49,11 @@ module Database =
 let warbler f a=
     f a a
 
-let createToken handler =
-    warbler (
-        fun _ ->
-            let guid = Guid.NewGuid()
-            handler guid
-        )
-    
-
-
+let createToken handler =    
+    fun _ ->
+        let guid = Guid.NewGuid()
+        handler guid
+   |> warbler 
 
 let getHandler (key: string) =
     match Guid.TryParse(key) with
@@ -73,22 +67,21 @@ let getHandler (key: string) =
     | _ ->
         RequestErrors.badRequest (text $"Invalid key format: {key}")
 let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
-let writeHandler  value (key: Guid): HttpHandler =
+let writeHandler value (key: Guid): HttpHandler =
     fun next ctx ->
         use db = new StreamWriter("database.txt", true)
         do Database.write db key value    
         next ctx
         
 let setHandler  =
-    bindForm<Message> culture
-        (
+    bindForm<Message> culture (
         fun value ->
-            createToken (
-                fun token ->                
-                    writeHandler value.text token >=>
-                    Successful.created (text $"{token}")
-                    )                
-        )
+        createToken (
+            fun token ->                
+                writeHandler value.text token >=>
+                Successful.created (text $"{token}")
+        )                
+    )
 
 let webApp =
     choose [
