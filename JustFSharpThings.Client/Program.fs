@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Net.Http
+open System.Threading.Tasks
 
 
 module Client =
@@ -37,31 +38,47 @@ module Client =
     [<Literal>]
     let BaseAddress = "http://localhost:8080/api/"
     let client() =
-        new HttpClient(BaseAddress = System.Uri(BaseAddress))
+        new HttpClient(BaseAddress = System.Uri(BaseAddress), Timeout=TimeSpan.FromSeconds(10.0))
     
     let (|Post|_|) (input: string) =
         String.Equals(input.Trim(), "post", System.StringComparison.OrdinalIgnoreCase)
     
     let (|Get|_|) (input: string) =
         String.Equals(input.Trim(), "get", System.StringComparison.OrdinalIgnoreCase)
-    let rec spam (client: HttpClient)  (rnd: Random) keyset =
-        task {            
-                match Action.random keyset rnd with
-                | Message message ->
-                    let! resp = client.PostAsync( "set", new FormUrlEncodedContent([KeyValuePair("text", message)] ))
-                    let! content = resp.Content.ReadAsStringAsync()
-                    printfn $"%s{content}"
-                    return!
-                        Set.add (Guid.Parse(content)) keyset                        
-                        |> spam client rnd                     
-                | Lookup key ->
-                    let! resp = client.GetAsync ($"get/{key}")
-                    let! content = resp.Content.ReadAsStringAsync()
-                    printfn $"%s{content}" 
-                    return! spam client rnd keyset
+    let send (client: HttpClient) (action: Action) =
+        task {
+            match action with
+            | Message message ->
+                let! resp = client.PostAsync("set", new FormUrlEncodedContent([KeyValuePair("text", message)]))
+                let! content = resp.Content.ReadAsStringAsync()
+                return Guid.Parse(content)
+            | Lookup key ->
+                let! resp = client.GetAsync($"get/{key}")
+                let! content = resp.Content.ReadAsStringAsync()
+                printfn $"%s{content}"
+                return key
         }
+    let rec spam (mailbox: MailboxProcessor<Action>)  (rnd: Random) keyset =
+        let action = Action.random keyset rnd
+        mailbox.Post action
+        spam mailbox rnd keyset
+    let processor (client: HttpClient) =
+        MailboxProcessor.Start(
+            fun inbox ->
+                let rec loop client keyset =
+                    async {
+                        let! action = inbox.Receive()
+                        try
+                            let! key = send client action |> Async.AwaitTask
+                            return! loop client (Set.add key keyset)
+                        with
+                        | ex  ->
+                            printfn $"Timeout occurred: %s{ex.Message}"
+                            return! loop client keyset                        
+                    }
+                loop client Set.empty
+            )        
         
-
 
 
 [<EntryPoint>]
@@ -69,22 +86,24 @@ let main argv =
     let argList = 
         argv |> Array.toList
     let rnd = Random()
+    let rec loop client keyset : Task=
+                    task {
+                        let action = Client.Action.random keyset rnd 
+                        try
+                            let! key = Client.send client action 
+                            return! loop client (Set.add key keyset)
+                        with
+                        | ex  ->
+                            printfn $"Timeout occurred: %s{ex.Message}"
+                            return! loop client keyset                        
+                    }    
+    
     let toDo =  
         task {
-            use client = Client.client()
+            use client = Client.client()            
             match argList with
-            | Client.Post :: str :: _ ->
-                let! resp = client.PostAsync( "set", new FormUrlEncodedContent([KeyValuePair("text", str)] ))
-                let! content = resp.Content.ReadAsStringAsync()
-                do printfn $"%s{content}"
-                return 0
-            | Client.Get :: key :: _  ->                
-                let! resp = client.GetAsync ($"get/{key.Trim()}")
-                let! content = resp.Content.ReadAsStringAsync()
-                do printfn $"%s{content}"
-                return 0
             | _ ->
-                do! Client.spam client rnd Set.empty<Guid> 
+                [|for _ in 1..500 do loop client Set.empty|] |> Task.WaitAll 
                 return 0                
         }
     toDo.GetAwaiter().GetResult()

@@ -25,4 +25,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj" />
+    </ItemGroup>
 </Project>
