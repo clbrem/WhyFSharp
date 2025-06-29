@@ -13,6 +13,8 @@
         <PackageReference Update="FSharp.Core" Version="9.0.300" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Bisect.fs" />
+        <Compile Include="Database.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
     <ItemGroup>

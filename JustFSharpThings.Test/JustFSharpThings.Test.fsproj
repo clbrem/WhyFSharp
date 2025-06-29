@@ -8,7 +8,12 @@
 
     <ItemGroup>
         <Compile Include="Tests.fs"/>
+        <Compile Include="DatabaseTest.fs" />
+        <Compile Include="BisectTest.fs" />
         <Compile Include="Program.fs"/>
+        <Content Include="Samples\database.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
@@ -16,10 +21,12 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1"/>
         <PackageReference Include="xunit" Version="2.9.2"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2"/>
+        <PackageReference Update="FSharp.Core" Version="9.0.300" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj" />
+      <ProjectReference Include="..\JustFSharpThings\JustFSharpThings.fsproj" />
     </ItemGroup>
 
 </Project>
