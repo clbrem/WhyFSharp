@@ -25,8 +25,16 @@ module DatabaseTest =
        Assert.Equal (3L, ln4)
        db.Seek(0, SeekOrigin.Begin) |> ignore
        let scan = Database.scan 15 db
+       Assert.Equal(ln1, scan.[fstGuid])
+       Assert.Equal(ln2, scan.[sndGuid])
+       Assert.Equal(ln3, scan.[thirdGuid])
+         
        Assert.Contains(fstGuid, scan)|> ignore
        Assert.Contains(sndGuid, scan)|> ignore
        Assert.Contains(thirdGuid, scan)|> ignore
        Assert.Contains(fourthGuid, scan)|> ignore
+       Assert.Equal(Some "Hello World", Database.read 15 scan db fstGuid)       
+       Assert.Equal(Some "Hillo World", Database.read 15 scan db sndGuid)
+       Assert.Equal(Some "Hallo World", Database.read 15 scan db fourthGuid)
+       
    

@@ -24,15 +24,19 @@ module Client =
         let randomKey (keySet: Set<Guid>) (rnd: Random) =
             let count = Set.count keySet
             if count = 0 then
-                Guid.NewGuid() 
+                None
             else
+                // pick a random key from the set
                 let index = rnd.Next(count)
-                keySet |> Seq.item index        
+                keySet |> Seq.item index |> Some        
         let random keySet (rnd: Random) =
             if rnd.Next(2) = 0 then
                 Message (randomString 1000 rnd)
             else
-                randomKey keySet rnd |> Lookup
+                match randomKey keySet rnd with
+                | Some key -> Lookup key
+                | None -> Message (randomString 1000 rnd)
+                
         
                 
     [<Literal>]
@@ -54,8 +58,8 @@ module Client =
                 return Guid.Parse(content)
             | Lookup key ->
                 let! resp = client.GetAsync($"get/{key}")
-                let! content = resp.Content.ReadAsStringAsync()
-                printfn $"%s{content}"
+                if resp.StatusCode = System.Net.HttpStatusCode.NotFound then
+                    printfn "Cache Miss!"                
                 return key
         }
     let rec spam (mailbox: MailboxProcessor<Action>)  (rnd: Random) keyset =
@@ -100,11 +104,9 @@ let main argv =
     
     let toDo =  
         async {
-            use client = Client.client()            
-            match argList with
-            | _ ->
-                let! _ = [|for _ in 1..500 do loop client Set.empty|] |> Async.Parallel   
-                return 0                
+            use client = Client.client()                        
+            let! _ = [|for i in 1..10 do loop client Set.empty|] |> Async.Parallel
+            return 0                
         }
     (toDo
     |> Async.StartAsTask

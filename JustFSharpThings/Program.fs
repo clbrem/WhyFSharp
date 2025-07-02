@@ -1,4 +1,7 @@
 namespace JustFSharpThings
+
+open System.Collections.Generic
+
 module App =
     open System
     open System.IO
@@ -9,7 +12,9 @@ module App =
     open Microsoft.Extensions.Logging
     open Microsoft.Extensions.DependencyInjection
     open Giraffe
-    
+
+    let WIDTH =
+        1000 // Width of the message in bytes, adjust as needed
     // ---------------------------------
     // Models
     // ---------------------------------
@@ -37,40 +42,70 @@ module App =
             handler guid
        |> warbler 
     
-    let getHandler (key: string) =
-        match Guid.TryParse(key) with
-        | true, guid ->
-            use db = new StreamReader("database.txt")
-            match Database.read db guid with
-            | Some value ->
-                Successful.ok (text value)
-            | None ->
-                RequestErrors.notFound (text $"No value found for key {key}")
-        | _ ->
-            RequestErrors.badRequest (text $"Invalid key format: {key}")
+    
     let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
-    let writeHandler value (key: Guid): HttpHandler =
+    type FileWriterMessage =
+        | Set of Guid * string
+        | Get of Guid * AsyncReplyChannel<string option>
+    let fileWriter (file, width)=
+        let fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read)
+        let index = Database.scan width fileStream
+        fileStream.Dispose()        
+        MailboxProcessor.Start(
+            fun mailbox ->
+                let rec loop (index: IDictionary<Guid,int64>)  =
+                    async {
+                        match! mailbox.Receive() with
+                        | Set (key,msg) ->
+                            use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite)
+                            db.Seek(0L, SeekOrigin.End) |> ignore
+                            let lineNumber = Database.write width db key msg
+                            index.Add(key, lineNumber)
+                            return! loop index
+                        | Get (key, reply) ->
+                            use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read)                            
+                            Database.read width index db key |> reply.Reply 
+                            return! loop index
+                    }
+                loop index
+            )
+    let getHandler (mailbox: MailboxProcessor<FileWriterMessage>) (key: string) next ctx=
+        task {
+            match Guid.TryParse(key) with
+            | true, guid ->                
+                    let! resp =  mailbox.PostAndTryAsyncReply(fun replyChannel -> Get (guid, replyChannel))  
+                    match Option.flatten resp with 
+                        | Some value ->
+                            return! Successful.ok (text value) next ctx
+                        | None ->
+                            return! RequestErrors.notFound (text $"No value found for key {key}") next ctx                                
+            | _ ->
+                return! RequestErrors.badRequest (text $"Invalid key format: {key}") next ctx
+        }
+        
+    let writeHandler (mailbox: MailboxProcessor<FileWriterMessage>) value (key: Guid): HttpHandler =
         fun next ctx ->
-            use db = new StreamWriter("database.txt", true)            
+            mailbox.Post (Set (key, value))
             next ctx
+
             
-    let setHandler  =
+    let setHandler mailbox  =
         bindForm<Message> culture (
             fun value ->
             createToken (
                 fun token ->                
-                    writeHandler value.text token >=>
+                    writeHandler mailbox (value.text) token >=>
                     Successful.created (text $"{token}")
             )                
         )
     
-    let webApp =
+    let webApp mailbox =
         choose [
             GET >=>
                 choose [                
                     subRoute "/api" (
                         choose [
-                                 routef "/get/%s" getHandler                             
+                                 routef "/get/%s" (getHandler mailbox)                             
                              ]
                         )                  
                 ]
@@ -78,7 +113,7 @@ module App =
                 choose [
                     subRoute"/api" (
                         choose [
-                            route "/set" >=> setHandler 
+                            route "/set" >=> setHandler mailbox 
                      ])
                 ]
     
@@ -105,7 +140,7 @@ module App =
            .AllowAnyHeader()
            |> ignore
     
-    let configureApp (app : IApplicationBuilder) =
+    let configureApp mailbox (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
         (match env.IsDevelopment() with
         | true  ->
@@ -115,7 +150,7 @@ module App =
                 .UseHttpsRedirection())
             .UseCors(configureCors)
             .UseStaticFiles()
-            .UseGiraffe(webApp)
+            .UseGiraffe(webApp mailbox)
     
     let configureServices (services : IServiceCollection) =
         services.AddCors()    |> ignore
@@ -129,13 +164,14 @@ module App =
     let main args =
         let contentRoot = Directory.GetCurrentDirectory()
         let webRoot     = Path.Combine(contentRoot, "WebRoot")
+        let mailbox = fileWriter ("database.txt", WIDTH)
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(
                 fun webHostBuilder ->
                     webHostBuilder
                         .UseContentRoot(contentRoot)
                         .UseWebRoot(webRoot)
-                        .Configure(Action<IApplicationBuilder> configureApp)
+                        .Configure(Action<IApplicationBuilder> (configureApp mailbox))
                         .ConfigureServices(configureServices)
                         .ConfigureLogging(configureLogging)
                         |> ignore)
