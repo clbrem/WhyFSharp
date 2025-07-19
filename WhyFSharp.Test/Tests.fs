@@ -1,7 +1,5 @@
 ﻿namespace Tests
 
-open System
-open System.Threading
 open Xunit
 open Xunit.Abstractions
 
@@ -12,7 +10,7 @@ type TestHarness(logger: ITestOutputHelper) =
         
     [<Fact>]
     let ``Can Round Robin`` () =        
-        let mailboxFactory (logger: ITestOutputHelper) i =
+        let mailboxFactory (_: ITestOutputHelper) i =
             
             MailboxProcessor<AsyncReplyChannel<int>>.Start(
                 fun inbox ->
@@ -30,7 +28,7 @@ type TestHarness(logger: ITestOutputHelper) =
             let acc = Array.init 9 (fun _ -> 0)
             for i in 0 ..  8 do
                 let! resp = roundRobin.PostAndAsyncReply(id)
-                acc.[i] <- resp
+                acc[i] <- resp
             do Assert.Equal<int []>(acc, [| 1; 2; 3; 4; 5; 1; 2; 3; 4; |])
         }
         

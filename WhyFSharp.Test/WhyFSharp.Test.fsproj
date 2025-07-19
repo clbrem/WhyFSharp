@@ -9,7 +9,6 @@
     <ItemGroup>
         <Compile Include="Tests.fs"/>
         <Compile Include="DatabaseTest.fs" />
-        <Compile Include="BisectTest.fs" />
         <Compile Include="Program.fs"/>
         <Content Include="Samples\database.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -25,8 +24,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj" />
-      <ProjectReference Include="..\JustFSharpThings\JustFSharpThings.fsproj" />
+      <ProjectReference Include="..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
+      <ProjectReference Include="..\WhyFSharp\WhyFSharp.fsproj" />
     </ItemGroup>
 
 </Project>

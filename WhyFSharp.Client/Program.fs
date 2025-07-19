@@ -3,7 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Net.Http
-open System.Threading.Tasks
+
 
 
 module Client =
@@ -18,7 +18,7 @@ module Client =
             
         let private randomString length (rnd: Random) =
             let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            let charArray = Array.init length (fun _ -> chars.[rnd.Next(chars.Length)])
+            let charArray = Array.init length (fun _ -> chars[rnd.Next(chars.Length)])
             String(charArray) 
         // randomKey pulls a random key from a set of keys
         let randomKey (keySet: Set<Guid>) (rnd: Random) =
@@ -42,13 +42,13 @@ module Client =
     [<Literal>]
     let BaseAddress = "http://localhost:8080/api/"
     let client() =
-        new HttpClient(BaseAddress = System.Uri(BaseAddress), Timeout=TimeSpan.FromSeconds(10.0))
+        new HttpClient(BaseAddress = Uri(BaseAddress), Timeout=TimeSpan.FromSeconds(10.0))
     
     let (|Post|_|) (input: string) =
-        String.Equals(input.Trim(), "post", System.StringComparison.OrdinalIgnoreCase)
+        String.Equals(input.Trim(), "post", StringComparison.OrdinalIgnoreCase)
     
     let (|Get|_|) (input: string) =
-        String.Equals(input.Trim(), "get", System.StringComparison.OrdinalIgnoreCase)
+        String.Equals(input.Trim(), "get", StringComparison.OrdinalIgnoreCase)
     let send (client: HttpClient) (action: Action) =
         task {
             match action with
@@ -59,7 +59,7 @@ module Client =
             | Lookup key ->
                 let! resp = client.GetAsync($"get/{key}")
                 if resp.StatusCode = System.Net.HttpStatusCode.NotFound then
-                    printfn "Cache Miss!"                
+                    printfn $"Cache Miss! : {key}"                
                 return key
         }
     let rec spam (mailbox: MailboxProcessor<Action>)  (rnd: Random) keyset =
@@ -87,8 +87,7 @@ module Client =
 
 [<EntryPoint>]
 let main argv =
-    let argList = 
-        argv |> Array.toList
+    
     let rnd = Random()
     let rec loop client keyset =
                     async {
@@ -100,13 +99,12 @@ let main argv =
                         | ex  ->
                             printfn $"Timeout occurred: %s{ex.Message}"
                             return! loop client keyset                        
-                    }    
-    
+                    }
     let toDo =  
         async {
             use client = Client.client()                        
-            let! _ = [|for i in 1..10 do loop client Set.empty|] |> Async.Parallel
-            return 0                
+            let! _ = [|for _ in 1..100 do loop client Set.empty|] |> Async.Parallel                 
+            return 0
         }
     (toDo
     |> Async.StartAsTask

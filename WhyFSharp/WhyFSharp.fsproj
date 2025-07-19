@@ -2,10 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <AssemblyName>JustFSharpThings</AssemblyName>
         <EnableDefaultContentItems>false</EnableDefaultContentItems>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <PackageId>WhyFSharp</PackageId>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Giraffe" Version="7.0.2" />
@@ -13,7 +13,6 @@
         <PackageReference Update="FSharp.Core" Version="9.0.300" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Bisect.fs" />
         <Compile Include="Database.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
@@ -21,13 +20,13 @@
         <Content Include="..\.dockerignore">
           <Link>.dockerignore</Link>
         </Content>
-        <Content Include="JustFSharpThings.md" />
+        <Content Include="WhyFSharp.md" />
         <Content Include="Dockerfile" />
         <Content Include="WebRoot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj" />
+      <ProjectReference Include="..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
     </ItemGroup>
 </Project>

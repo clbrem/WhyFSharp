@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\JustFSharpThings.Mailbox\JustFSharpThings.Mailbox.fsproj" />
+      <ProjectReference Include="..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

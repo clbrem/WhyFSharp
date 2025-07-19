@@ -1,4 +1,4 @@
-# Ten Things I Like about the F#
+# Eight reasons to try F#
 1. **Table Stakes**
    - Functional (First class functions, immutability, etc.)
    - Object-oriented  
@@ -18,10 +18,9 @@
      ```
 2. **Type Inference** 
 3. **Railway Oriented Programming** 
-4. **Union Types**
-5. **Pattern Matching**
-6. **Computation Expressions**
-7. **Tail Recursion**
-8. **Mailbox Processor**
-9. **Fable**
-10. **Type Providers** (NOT)
+4. **Union Types**/**Active Patterns**
+5. **Computation Expressions**
+6. **Tail Recursion**
+7. **Mailbox Processor**
+8. **Fable**
+9. (Bonus) **Type Providers** 

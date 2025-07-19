@@ -1,6 +1,7 @@
-namespace JustFSharpThings
+namespace WhyFSharp
 
 open System.Collections.Generic
+
 
 module App =
     open System
@@ -24,20 +25,11 @@ module App =
             text : string
         }
     
-    // ---------------------------------
-    // Views
-    // ---------------------------------
-    
-    
-    // ---------------------------------
-    // Web app
-    // ---------------------------------
-    
     let warbler f a=
         f a a
     
     let createToken handler =    
-        fun _ ->
+       fun _ ->
             let guid = Guid.NewGuid()
             handler guid
        |> warbler 
@@ -58,14 +50,28 @@ module App =
                         match! mailbox.Receive() with
                         | Set (key,msg) ->
                             use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite)
-                            db.Seek(0L, SeekOrigin.End) |> ignore
-                            let lineNumber = Database.write width db key msg
-                            index.Add(key, lineNumber)
-                            return! loop index
+                            try 
+                                db.Seek(0L, SeekOrigin.End) |> ignore
+                                let lineNumber = Database.write width db key msg
+                                index.Add(key, lineNumber)
+                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
+                                return! loop index
+                            with
+                            | :? IOException ->
+                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
+                                return! loop index                                
                         | Get (key, reply) ->
                             use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read)                            
-                            Database.read width index db key |> reply.Reply 
-                            return! loop index
+                            try                                 
+                                let msg = Database.read width index db key 
+                                reply.Reply(msg)
+                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
+                                return! loop index
+                            with
+                            | :? IOException  ->
+                                reply.Reply(None)
+                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
+                                return! loop index
                     }
                 loop index
             )
@@ -94,7 +100,7 @@ module App =
             fun value ->
             createToken (
                 fun token ->                
-                    writeHandler mailbox (value.text) token >=>
+                    writeHandler mailbox value.text token >=>
                     Successful.created (text $"{token}")
             )                
         )
