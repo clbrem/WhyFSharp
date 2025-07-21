@@ -64,7 +64,7 @@ type DatabaseTest () =
            let guid = Guid.NewGuid()
            do Database.write db guid null // Write a null value
            Database.read db guid |> Option.map Assert.Empty
-              
+    
        
        
        

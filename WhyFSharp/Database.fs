@@ -6,10 +6,8 @@ open System.IO
 open System.Text
 open Microsoft.Extensions.Logging
 
-
-
-
 type Database =
+    // Record type represents a database
     private
         {
             index: IDictionary<Guid, int64>

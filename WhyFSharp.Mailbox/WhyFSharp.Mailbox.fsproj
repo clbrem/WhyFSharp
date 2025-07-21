@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="RoundRobin.fs" />
+        <Compile Include="Transformers.fs" />
     </ItemGroup>
 
     <ItemGroup>

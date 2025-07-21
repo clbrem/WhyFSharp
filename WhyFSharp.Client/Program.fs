@@ -93,7 +93,7 @@ let main argv =
     let toDo =  
         async {
             use client = Client.client()                        
-            let! _ = [|for _ in 1..100 do loop client Set.empty|] |> Async.Parallel
+            let! _ = [|for _ in 1..500 do loop client Set.empty|] |> Async.Parallel
             return 0
         }
     (toDo
