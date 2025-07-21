@@ -39,47 +39,42 @@ module App =
     type FileWriterMessage =
         | Set of Guid * string
         | Get of Guid * AsyncReplyChannel<string option>
-    let fileWriter (file, width)=
-        let fileStream = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read)
-        let index = Database.scan width fileStream
-        fileStream.Dispose()        
+    let fileWriter factory =        
         MailboxProcessor.Start(
             fun mailbox ->
-                let rec loop (index: IDictionary<Guid,int64>)  =
+                let rec loop factory =
                     async {
                         match! mailbox.Receive() with
                         | Set (key,msg) ->
-                            use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite)
-                            try 
-                                db.Seek(0L, SeekOrigin.End) |> ignore
-                                let lineNumber = Database.write width db key msg
-                                index.Add(key, lineNumber)
-                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
-                                return! loop index
+                            use db = factory true
+                            try                                 
+                                Database.write db key msg                                
+                                do! db.DisposeAsync()
+                                return! loop factory
                             with
                             | :? IOException ->
-                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
-                                return! loop index                                
+                                do! db.DisposeAsync()
+                                return! loop factory
                         | Get (key, reply) ->
-                            use db = File.Open(file, FileMode.OpenOrCreate, FileAccess.Read)                            
+                            use db = factory false
                             try                                 
-                                let msg = Database.read width index db key 
+                                let msg = Database.read db key 
                                 reply.Reply(msg)
-                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
-                                return! loop index
+                                do! db.DisposeAsync()
+                                return! loop factory
                             with
                             | :? IOException  ->
                                 reply.Reply(None)
-                                do! db.DisposeAsync().AsTask() |> Async.AwaitTask
-                                return! loop index
+                                do! db.DisposeAsync()
+                                return! loop factory
                     }
-                loop index
+                loop factory
             )
     let getHandler (mailbox: MailboxProcessor<FileWriterMessage>) (key: string) next ctx=
         task {
             match Guid.TryParse(key) with
             | true, guid ->                
-                    let! resp =  mailbox.PostAndTryAsyncReply(fun replyChannel -> Get (guid, replyChannel))  
+                    let! resp =  mailbox.PostAndTryAsyncReply((fun replyChannel -> Get (guid, replyChannel)), timeout=10000)  
                     match Option.flatten resp with 
                         | Some value ->
                             return! Successful.ok (text value) next ctx
@@ -94,15 +89,23 @@ module App =
             mailbox.Post (Set (key, value))
             next ctx
 
+    let failOnNull (value: string) =
+        fun next ctx ->
+            if String.IsNullOrEmpty(value) then
+                RequestErrors.badRequest (text "Value cannot be null or empty") next ctx
+            else
+                next ctx
             
-    let setHandler mailbox  =
+    let setHandler mailbox  =        
         bindForm<Message> culture (
             fun value ->
-            createToken (
-                fun token ->                
-                    writeHandler mailbox value.text token >=>
-                    Successful.created (text $"{token}")
-            )                
+                failOnNull value.text
+                >=>
+                createToken (
+                    fun token ->                
+                        writeHandler mailbox value.text token >=>
+                        Successful.created (text $"{token}")
+                )                
         )
     
     let webApp mailbox =
@@ -119,7 +122,7 @@ module App =
                 choose [
                     subRoute"/api" (
                         choose [
-                            route "/set" >=> setHandler mailbox 
+                           route "/set" >=> setHandler mailbox 
                      ])
                 ]
     
@@ -146,8 +149,9 @@ module App =
            .AllowAnyHeader()
            |> ignore
     
-    let configureApp mailbox (app : IApplicationBuilder) =
+    let configureApp (fileName, width) (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
+        let logger = app.ApplicationServices.GetService<ILogger<Database>>()
         (match env.IsDevelopment() with
         | true  ->
             app.UseDeveloperExceptionPage()
@@ -156,7 +160,12 @@ module App =
                 .UseHttpsRedirection())
             .UseCors(configureCors)
             .UseStaticFiles()
-            .UseGiraffe(webApp mailbox)
+            .UseGiraffe(
+                (fileName, width, logger)
+                |> Database.factoryWithLogger
+                |> fileWriter
+                |> webApp
+                )
     
     let configureServices (services : IServiceCollection) =
         services.AddCors()    |> ignore
@@ -169,17 +178,16 @@ module App =
     [<EntryPoint>]
     let main args =
         let contentRoot = Directory.GetCurrentDirectory()
-        let webRoot     = Path.Combine(contentRoot, "WebRoot")
-        let mailbox = fileWriter ("database.txt", WIDTH)
+        let webRoot     = Path.Combine(contentRoot, "WebRoot")                
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(
                 fun webHostBuilder ->
                     webHostBuilder
                         .UseContentRoot(contentRoot)
-                        .UseWebRoot(webRoot)
-                        .Configure(Action<IApplicationBuilder> (configureApp mailbox))
+                        .UseWebRoot(webRoot)                        
                         .ConfigureServices(configureServices)
                         .ConfigureLogging(configureLogging)
+                        .Configure(Action<IApplicationBuilder> (configureApp ("database.txt", WIDTH)))
                         |> ignore)
             .Build()
             .Run()

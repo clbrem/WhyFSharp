@@ -10,6 +10,7 @@
         <Compile Include="Tests.fs"/>
         <Compile Include="DatabaseTest.fs" />
         <Compile Include="Program.fs"/>
+        <Content Include="Database.http" />
         <Content Include="Samples\database.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>

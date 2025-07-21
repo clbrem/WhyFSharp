@@ -1,0 +1,15 @@
+### POST request to example server
+POST http://localhost:8080/api/set
+Content-Type: application/x-www-form-urlencoded
+
+text=Welcome NHDNUG
+
+> {%
+   client.global.set("response", response.body)  
+ %}
+
+### GET request to example server 
+
+GET http://localhost:8080/api/get/{{response}}
+Accept: text/plain
+

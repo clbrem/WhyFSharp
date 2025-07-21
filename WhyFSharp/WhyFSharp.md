@@ -1,5 +1,7 @@
 # Eight reasons to try F#
 1. **Table Stakes**
+   - Released (1.0) by Microsoft Research/Don Syme in 2005
+   - Supported in Visual Studio 2010 
    - Functional (First class functions, immutability, etc.)
    - Object-oriented  
    - ML family (OCaml, Haskell, Rust, etc.)
