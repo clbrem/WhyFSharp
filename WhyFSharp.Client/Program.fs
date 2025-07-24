@@ -1,5 +1,4 @@
-﻿// For more information see https://aka.ms/fsharp-console-apps
-
+﻿
 open System
 open System.Collections.Generic
 open System.Net.Http
@@ -38,48 +37,33 @@ module Client =
     let BaseAddress = "http://localhost:8080/api/"
     let client() =
         new HttpClient(BaseAddress = Uri(BaseAddress), Timeout=TimeSpan.FromSeconds(10.0))
-        
-    let send (client: HttpClient) (action: Action) =
+    
+    let writeAsync (client: HttpClient) (message: string) =
         task {
+            let! resp = client.PostAsync("set", new FormUrlEncodedContent([KeyValuePair("text", message)]))
+            let! content = resp.Content.ReadAsStringAsync()
+            return Guid.Parse(content)
+        }
+    let lookupAsync (client: HttpClient) (key: Guid) =
+        task {
+            let! resp = client.GetAsync($"get/{key}")
+            if resp.StatusCode = System.Net.HttpStatusCode.NotFound then
+                printfn $"Miss! : {key}"                
+            return key
+        }
+            
+    let send (client: HttpClient) (action: Action) =        
             match action with
             | Message message ->
-                let! resp = client.PostAsync("set", new FormUrlEncodedContent([KeyValuePair("text", message)]))
-                let! content = resp.Content.ReadAsStringAsync()
-                return Guid.Parse(content)
+                writeAsync client message
             | Lookup key ->
-                let! resp = client.GetAsync($"get/{key}")
-                if resp.StatusCode = System.Net.HttpStatusCode.NotFound then
-                    printfn $"Cache Miss! : {key}"                
-                return key
-        }
-    let rec spam (mailbox: MailboxProcessor<Action>)  (rnd: Random) keyset =
-        let action = Action.random keyset rnd
-        mailbox.Post action
-        spam mailbox rnd keyset
-    let processor (client: HttpClient) =
-        MailboxProcessor.Start(
-            fun inbox ->
-                let rec loop client keyset =
-                    async {
-                        let! action = inbox.Receive()
-                        try
-                            let! key = send client action |> Async.AwaitTask
-                            return! loop client (Set.add key keyset)
-                        with
-                        | ex  ->
-                            printfn $"Timeout occurred: %s{ex.Message}"
-                            return! loop client keyset                        
-                    }
-                loop client Set.empty
-            )        
-        
-
+                lookupAsync client key                    
 
 [<EntryPoint>]
 let main argv =
     
     let rnd = Random()
-    let rec loop client keyset =
+    let rec loop client keyset : Async<unit>=
         async {
             let action = Client.Action.random keyset rnd 
             try
@@ -93,7 +77,7 @@ let main argv =
     let toDo =  
         async {
             use client = Client.client()                        
-            let! _ = [|for _ in 1..500 do loop client Set.empty|] |> Async.Parallel
+            let! _ = [ for _ in 1 .. 100 do loop client Set.empty] |> Async.Parallel
             return 0
         }
     (toDo

@@ -2,7 +2,7 @@
 POST http://localhost:8080/api/set
 Content-Type: application/x-www-form-urlencoded
 
-text=Welcome NHDNUG
+text=Hello, World!
 
 > {%
    client.global.set("response", response.body)  

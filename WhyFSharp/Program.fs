@@ -1,7 +1,7 @@
 namespace WhyFSharp
 
 open System.Collections.Generic
-
+open Mailbox
 
 module App =
     open System
@@ -32,13 +32,12 @@ module App =
        fun _ ->
             let guid = Guid.NewGuid()
             handler guid
-       |> warbler 
-    
-    
+       |> warbler         
     let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
     type FileWriterMessage =
         | Set of Guid * string
         | Get of Guid * AsyncReplyChannel<string option>
+
     let fileWriter factory =        
         MailboxProcessor.Start(
             fun mailbox ->
@@ -96,17 +95,15 @@ module App =
             else
                 next ctx
             
-    let setHandler mailbox  =        
+    let setHandler mailbox token  =        
         bindForm<Message> culture (
-            fun value ->
-                failOnNull value.text
-                >=>
-                createToken (
-                    fun token ->                
+                    fun value ->
+                        failOnNull value.text
+                        >=>                                
                         writeHandler mailbox value.text token >=>
                         Successful.created (text $"{token}")
                 )                
-        )
+        
     
     let webApp mailbox =
         choose [
@@ -122,7 +119,7 @@ module App =
                 choose [
                     subRoute"/api" (
                         choose [
-                           route "/set" >=> setHandler mailbox 
+                           route "/set" >=> createToken (setHandler mailbox)  
                      ])
                 ]
     
@@ -152,6 +149,8 @@ module App =
     let configureApp (fileName, width) (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
         let logger = app.ApplicationServices.GetService<ILogger<Database>>()
+        let mailbox = 
+            fileWriter (Database.factoryWithLogger (fileName, width, logger))               
         (match env.IsDevelopment() with
         | true  ->
             app.UseDeveloperExceptionPage()
@@ -161,9 +160,7 @@ module App =
             .UseCors(configureCors)
             .UseStaticFiles()
             .UseGiraffe(
-                (fileName, width, logger)
-                |> Database.factoryWithLogger
-                |> fileWriter
+                mailbox
                 |> webApp
                 )
     
