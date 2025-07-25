@@ -7,10 +7,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["WhyFSharp/WhyFSharp.fsproj", "WhyFSharp/"]
-RUN dotnet restore "WhyFSharp/WhyFSharp.fsproj"
+COPY ["WhyFSharp_0/WhyFSharp/WhyFSharp.fsproj", "WhyFSharp_0/WhyFSharp/"]
+RUN dotnet restore "WhyFSharp_0/WhyFSharp/WhyFSharp.fsproj"
 COPY . .
-WORKDIR "/src/WhyFSharp"
+WORKDIR "/src/WhyFSharp_0/WhyFSharp"
 RUN dotnet build "./WhyFSharp.fsproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

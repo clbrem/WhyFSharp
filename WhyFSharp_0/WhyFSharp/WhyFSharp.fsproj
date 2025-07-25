@@ -13,20 +13,19 @@
         <PackageReference Update="FSharp.Core" Version="9.0.300" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="Database.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
     <ItemGroup>
-        <Content Include="..\.dockerignore">
+        <Content Include="..\..\.dockerignore">
           <Link>.dockerignore</Link>
         </Content>
-        <Content Include="WhyFSharp.md" />
         <Content Include="Dockerfile" />
         <Content Include="WebRoot\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
+      <ProjectReference Include="..\..\WhyFSharp.Database\WhyFSharp.Database.fsproj" />
+      <ProjectReference Include="..\..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
     </ItemGroup>
 </Project>

@@ -4,7 +4,8 @@ open Xunit
 open System
 open System.IO
 type DatabaseTest () =   
-   let factory = ("Samples/database.txt", 1000) |> Database.factory   
+   let factory = ("Samples/database.txt", 1000) |> Database.factory
+   
    let db = factory true
    let fstGuid = Guid.NewGuid()
    let sndGuid = Guid.NewGuid()
@@ -26,23 +27,7 @@ type DatabaseTest () =
        Assert.Equal(Some "Hell World", Database.read  db fourthGuid)
        
    
-   [<Fact>]
-   let ``Can Write Using Mailbox``() =
-       task {           
-           let writer = App.fileWriter factory 
-           let guid = Guid.NewGuid()
-           let guid2 = Guid.NewGuid()
-           let msg = "Hello World"
-           writer.Post(App.Set (guid, msg))           
-           match! writer.PostAndAsyncReply(fun replyChannel -> App.Get (guid, replyChannel)) with
-           | Some msg ->Assert.Equal(msg, "Hello World")
-           | _ -> Assert.Fail("Expected Some (Some msg)")
-           match! writer.PostAndAsyncReply(fun replyChannel -> App.Get (guid2, replyChannel)) with
-           | None -> Assert.True(true) // Guid2 not found
-           | _ -> Assert.Fail("Expected Some None")
-       }
-       
-         
+            
        
    [<Fact>]
    let ``Can not write value that is too long``() =
