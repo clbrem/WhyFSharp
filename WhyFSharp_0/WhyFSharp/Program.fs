@@ -1,7 +1,5 @@
 namespace WhyFSharp
 
-open System.Collections.Generic
-open Mailbox
 
 module App =
     open System
@@ -13,7 +11,7 @@ module App =
     open Microsoft.Extensions.Logging
     open Microsoft.Extensions.DependencyInjection
     open Giraffe
-
+    let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
     let WIDTH =
         1000 // Width of the message in bytes, adjust as needed
     // ---------------------------------
@@ -23,43 +21,19 @@ module App =
     type Message =
         {
             text : string
-        }                     
-    let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
-    let parseToken handler (s: string)=
-        match Guid.TryParse(s) with
-        | true, guid -> handler guid
-        | false, _  -> RequestErrors.badRequest (text "Invalid token format. Expected a valid GUID.")
-    let getHandler databaseFactory (token: Guid) =
-        use database = databaseFactory false
-        match Database.read database token with 
-        | Some value -> 
-            Successful.ok (text $"{value}") // Placeholder for get handler
-        | None -> 
-            RequestErrors.notFound (text "Token not found in the database.")
-    // ---------------------------------
-    let failOnNull (msg) next ctx=        
-        if String.IsNullOrEmpty(msg) then
-            RequestErrors.badRequest (text "Message text cannot be null or empty.") next ctx
-        else
-            next ctx            
-    let writeHandler databaseFactory (value: string) (key: Guid) next ctx=
-        use database = databaseFactory true
-        Database.write database key value
-        next ctx
-    let warbler f a  = f a a         
-    let createGuid handler =
-        fun _  -> 
-            let guid = Guid.NewGuid()
-            handler guid
-        |> warbler  
+        }
+    
+    let stub =
+        ServerErrors.notImplemented (text "Method Not Implemented")
+
     //    ---------------------------------    
-    let webApp  databaseFactory =
+    let webApp  =
         choose [
             GET >=>
                 choose [                
                     subRoute "/api" (
                         choose [
-                                 routef "/get/%s" (parseToken (getHandler databaseFactory ))                              
+                                 routef "/get/%s" (fun _ -> stub)                              
                              ]
                         )                  
                 ]
@@ -67,17 +41,9 @@ module App =
                 choose [
                     subRoute"/api" (
                         choose [
-                           route "/set" >=> ( createGuid (
-                               fun guid ->
-                                   bindForm<Message> culture (
-                                           fun message ->
-                                              failOnNull message.text
-                                              >=> writeHandler databaseFactory  message.text guid
-                                              >=> Successful.created (text $"{guid}")
-                                       )
-                               )
-                           )
-                     ])
+                           route "/set" >=> stub
+                           ]
+                     )
                 ]
     
             setStatusCode 404 >=> text "Not Found" ]
@@ -106,7 +72,7 @@ module App =
     let configureApp (fileName, width) (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
         let logger = app.ApplicationServices.GetService<ILogger<Database>>()
-        let database = Database.factoryWithLogger (fileName, width, logger)            
+        let database = Database.factoryWithLogger (fileName, width, logger)        
         (match env.IsDevelopment() with
         | true  ->
             app.UseDeveloperExceptionPage()
@@ -116,7 +82,7 @@ module App =
             .UseCors(configureCors)
             .UseStaticFiles()
             .UseGiraffe(
-                webApp database
+                webApp 
                 )
     
     let configureServices (services : IServiceCollection) =

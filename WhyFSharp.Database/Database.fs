@@ -96,8 +96,10 @@ module Database =
         // Write a value to the database, update the index
         if database.readOnly then
             raise (InvalidOperationException("Cannot write to a read-only database."))
+        if database.width < value.Length then
+            raise (ArgumentException($"Value must have length less than {database.width} or it will be truncated."))
         database.logger
-        |> Option.iter (_.LogInformation("Writing to key {key} message of length {}",key, value.Length ))
+        |> Option.iter _.LogInformation("Writing to key {key} message of length {}",key, value.Length )
         let db, width, index = database.stream, database.width, database.index        
         db.Seek(0L, SeekOrigin.End) |> ignore
         let shared = ArrayPool.Shared.Rent(width + PADDING)        

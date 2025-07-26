@@ -9,13 +9,6 @@
     <ItemGroup>
         <Compile Include="Program.fs"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-      <Content Include="Dockerfile" />
-    </ItemGroup>
     
     <ItemGroup>
       <ProjectReference Include="..\..\WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj" />
