@@ -1,0 +1,13 @@
+### GET request to example server
+POST http://localhost:8080/api/set
+Content-Type: application/x-www-form-urlencoded
+
+text=Hello World!
+
+> {%
+  client.global.set("token", response.body) 
+%}
+
+###
+
+GET http://localhost:8080/api/get/{{token}}
