@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WhyFSharp", "WhyFSharp_0\WhyFSharp\WhyFSharp.fsproj", "{37CF07DA-9DCF-4D65-B927-264994659113}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WhyFSharp.Client", "WhyFSharp.Client\WhyFSharp.Client.fsproj", "{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WhyFSharp.Mailbox", "WhyFSharp.Mailbox\WhyFSharp.Mailbox.fsproj", "{67296A11-7CDE-4176-9F3F-E67B704A85B3}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WhyFSharp.Test", "WhyFSharp.Test\WhyFSharp.Test.fsproj", "{3076EC9C-4655-4E4D-A12A-FA47A151B5E7}"
@@ -40,10 +38,6 @@ Global
 		{37CF07DA-9DCF-4D65-B927-264994659113}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37CF07DA-9DCF-4D65-B927-264994659113}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37CF07DA-9DCF-4D65-B927-264994659113}.Release|Any CPU.Build.0 = Release|Any CPU
-		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56CEB7D2-BE2E-482E-BC2B-250E30DF65EA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67296A11-7CDE-4176-9F3F-E67B704A85B3}.Release|Any CPU.ActiveCfg = Release|Any CPU

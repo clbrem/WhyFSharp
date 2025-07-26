@@ -44,7 +44,7 @@ module Database =
         | :? ArgumentException ->
             None
     [<TailCall>]
-    let rec private scanLoop width db buffer (acc: (Guid * int64) list) =
+    let rec private scanLoop width db buffer acc =
         // Create the index by scanning the database
         match db with
         | Key buffer key->
@@ -117,7 +117,7 @@ module Database =
             ArrayPool.Shared.Return(shared)
     
     // Read an entry from the database    
-    let read (database: Database) (key: Guid) =
+    let read database (key: Guid) =
         let db, width, index = database.stream, database.width, database.index
         
         database.logger

@@ -83,7 +83,7 @@ module App =
                 return! RequestErrors.badRequest (text $"Invalid key format: {key}") next ctx
         }
         
-    let writeHandler (mailbox: MailboxProcessor<FileWriterMessage>) value (key: Guid): HttpHandler =
+    let writeHandler (mailbox: MailboxProcessor<FileWriterMessage>)  (key: Guid) value: HttpHandler =
         fun next ctx ->
             mailbox.Post (Set (key, value))
             next ctx
@@ -100,7 +100,7 @@ module App =
                     fun value ->
                         failOnNull value.text
                         >=>                                
-                        writeHandler mailbox value.text token >=>
+                        writeHandler mailbox token value.text  >=>
                         Successful.created (text $"{token}")
                 )                
         

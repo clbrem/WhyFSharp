@@ -23,95 +23,43 @@ module App =
     type Message =
         {
             text : string
-        }
-    
-    let warbler f a=
-        f a a
-    
-    let createToken handler =    
-       fun _ ->
+        }                     
+    let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
+    let parseToken handler (s: string)=
+        match Guid.TryParse(s) with
+        | true, guid -> handler guid
+        | false, _  -> RequestErrors.badRequest (text "Invalid token format. Expected a valid GUID.")
+    let getHandler databaseFactory (token: Guid) =
+        use database = databaseFactory false
+        match Database.read database token with 
+        | Some value -> 
+            Successful.ok (text $"{value}") // Placeholder for get handler
+        | None -> 
+            RequestErrors.notFound (text "Token not found in the database.")
+    // ---------------------------------
+    let failOnNull (msg) next ctx=        
+        if String.IsNullOrEmpty(msg) then
+            RequestErrors.badRequest (text "Message text cannot be null or empty.") next ctx
+        else
+            next ctx            
+    let writeHandler databaseFactory (value: string) (key: Guid) next ctx=
+        use database = databaseFactory true
+        Database.write database key value
+        next ctx
+    let warbler f a  = f a a         
+    let createGuid handler =
+        fun _  -> 
             let guid = Guid.NewGuid()
             handler guid
-       |> warbler         
-    let culture = System.Globalization.CultureInfo.CreateSpecificCulture("en-US") |> Some
-    type FileWriterMessage =
-        | Set of Guid * string
-        | Get of Guid * AsyncReplyChannel<string option>
-
-    let fileWriter factory =        
-        MailboxProcessor.Start(
-            fun mailbox ->
-                let rec loop factory =
-                    async {
-                        match! mailbox.Receive() with
-                        | Set (key,msg) ->
-                            use db = factory true
-                            try                                 
-                                Database.write db key msg                                
-                                do! db.DisposeAsync()
-                                return! loop factory
-                            with
-                            | :? IOException ->
-                                do! db.DisposeAsync()
-                                return! loop factory
-                        | Get (key, reply) ->
-                            use db = factory false
-                            try                                 
-                                let msg = Database.read db key 
-                                reply.Reply(msg)
-                                do! db.DisposeAsync()
-                                return! loop factory
-                            with
-                            | :? IOException  ->
-                                reply.Reply(None)
-                                do! db.DisposeAsync()
-                                return! loop factory
-                    }
-                loop factory
-            )
-    let getHandler (mailbox: MailboxProcessor<FileWriterMessage>) (key: string) next ctx=
-        task {
-            match Guid.TryParse(key) with
-            | true, guid ->                
-                    let! resp =  mailbox.PostAndTryAsyncReply((fun replyChannel -> Get (guid, replyChannel)), timeout=10000)  
-                    match Option.flatten resp with 
-                        | Some value ->
-                            return! Successful.ok (text value) next ctx
-                        | None ->
-                            return! RequestErrors.notFound (text $"No value found for key {key}") next ctx                                
-            | _ ->
-                return! RequestErrors.badRequest (text $"Invalid key format: {key}") next ctx
-        }
-        
-    let writeHandler (mailbox: MailboxProcessor<FileWriterMessage>) value (key: Guid): HttpHandler =
-        fun next ctx ->
-            mailbox.Post (Set (key, value))
-            next ctx
-
-    let failOnNull (value: string) =
-        fun next ctx ->
-            if String.IsNullOrEmpty(value) then
-                RequestErrors.badRequest (text "Value cannot be null or empty") next ctx
-            else
-                next ctx
-            
-    let setHandler mailbox token  =        
-        bindForm<Message> culture (
-                    fun value ->
-                        failOnNull value.text
-                        >=>                                
-                        writeHandler mailbox value.text token >=>
-                        Successful.created (text $"{token}")
-                )                
-        
-    
-    let webApp mailbox =
+        |> warbler  
+    //    ---------------------------------    
+    let webApp  databaseFactory =
         choose [
             GET >=>
                 choose [                
                     subRoute "/api" (
                         choose [
-                                 routef "/get/%s" (getHandler mailbox)                             
+                                 routef "/get/%s" (parseToken (getHandler databaseFactory ))                              
                              ]
                         )                  
                 ]
@@ -119,7 +67,16 @@ module App =
                 choose [
                     subRoute"/api" (
                         choose [
-                           route "/set" >=> createToken (setHandler mailbox)  
+                           route "/set" >=> ( createGuid (
+                               fun guid ->
+                                   bindForm<Message> culture (
+                                           fun message ->
+                                              failOnNull message.text
+                                              >=> writeHandler databaseFactory  message.text guid
+                                              >=> Successful.created (text $"{guid}")
+                                       )
+                               )
+                           )
                      ])
                 ]
     
@@ -149,8 +106,7 @@ module App =
     let configureApp (fileName, width) (app : IApplicationBuilder) =
         let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
         let logger = app.ApplicationServices.GetService<ILogger<Database>>()
-        let mailbox = 
-            fileWriter (Database.factoryWithLogger (fileName, width, logger))               
+        let database = Database.factoryWithLogger (fileName, width, logger)            
         (match env.IsDevelopment() with
         | true  ->
             app.UseDeveloperExceptionPage()
@@ -160,8 +116,7 @@ module App =
             .UseCors(configureCors)
             .UseStaticFiles()
             .UseGiraffe(
-                mailbox
-                |> webApp
+                webApp database
                 )
     
     let configureServices (services : IServiceCollection) =

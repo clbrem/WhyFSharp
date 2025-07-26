@@ -2,7 +2,7 @@
 POST http://localhost:8080/api/set
 Content-Type: application/x-www-form-urlencoded
 
-text=Hello World!
+text=Hello NHDNUG From Conroe!
 
 > {%
   client.global.set("token", response.body) 
@@ -11,3 +11,8 @@ text=Hello World!
 ###
 
 GET http://localhost:8080/api/get/{{token}}
+
+###
+
+
+GET http://localhost:8080/api/get/123
