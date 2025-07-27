@@ -8,3 +8,6 @@ riderModule.iml
 database.txt
 .config/
 node_modules
+*.fs.ts
+*.fs.js
+.vite
