@@ -55,8 +55,4 @@ type TestHarness(logger: ITestOutputHelper) =
                 let! resp = roundRobin.PostAndAsyncReply(fun ch -> keys[i], ch)
                 acc[i] <- resp
             do Assert.Equal<uint16[]>(keys |> Array.map (guidToInt 4) , acc)
-        }        
-    
-        
-    
-    
+        }

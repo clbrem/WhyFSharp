@@ -6,3 +6,5 @@ riderModule.iml
 .idea
 *.DotSettings.user
 database.txt
+.config/
+node_modules
