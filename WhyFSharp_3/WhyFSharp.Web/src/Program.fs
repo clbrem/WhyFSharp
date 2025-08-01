@@ -1,23 +1,47 @@
 ﻿module App
+open System
 
 open Feliz
 open Elmish
 open Elmish.HMR
+open Fable.SimpleHttp
+
 
 type Model = {Text: string}
 
-type Msg = | Submit | UpdateText of string
+type Msg = | Submit | UpdateText of string | AppendKey of Guid
 
 let init () = {Text = ""}, Cmd.none
 
-let update msg model =
+type Config = { server: string }
+let config: Config =
+    {
+        server = "http://localhost:5000"
+    }
+
+let post config message=
+    async {
+        let req =
+            Http.request($"{config.server}/api/set")
+            |> Http.method POST
+            |> Http.content (FormData.create() |> FormData.append "text" message |> BodyContent.Form)            
+        let! resp =  Http.send req
+        
+    }
+
+
+let update config msg model =
     match msg with
     | Submit -> 
         // Here you would typically send the model.Text to a server or process it
         printfn "Submitted text: %s" model.Text
-        model, Cmd.none
+        model, Cmd.OfAsync.perform 
+            (post config ) 
+            (model.Text) 
+            (fun _ -> UpdateText "") // Reset the text after submission
     | UpdateText text -> 
         {model with Text = text}, Cmd.none
+    | AppendKey guid -> failwith "todo"
 
 let render model dispatch =
             
@@ -55,6 +79,6 @@ let render model dispatch =
             
         ]
     ]    
-Program.mkProgram init update render
+Program.mkProgram init (update config) render
 |> Program.withReactSynchronous "elmish-app"
 |> Program.run
