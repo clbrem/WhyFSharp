@@ -8,8 +8,7 @@ module Cmd =
         
         let attempt<'S,'T> (agent: MailboxProcessor<Dispatch<'S> *'T>) (msg: 'T) (handler: exn -> 'S) =
             Cmd.ofEffect (
-                fun dispatch ->
-                    agent.Error.Add(handler >> dispatch)
+                fun dispatch -> 
                     agent.Post(dispatch, msg)
                     )
             
@@ -17,7 +16,7 @@ module Cmd =
         let either<'S,'T> (agent: MailboxProcessor<Dispatch<'S> * 'T>) (message: 'T) (handler : exn -> 'S) =
             Cmd.ofEffect (
                 fun dispatch ->
-                    do agent.Error.Add(handler >> dispatch)
+                    //do agent.Error.Add(handler >> dispatch)
                     do agent.Post(dispatch, message)
                     )
         

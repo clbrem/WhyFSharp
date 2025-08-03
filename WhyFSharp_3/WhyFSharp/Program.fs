@@ -1,16 +1,33 @@
 namespace WhyFSharp
 
 open System
-
+open System.Net.WebSockets
+open Giraffe
+open Microsoft.AspNetCore.Http
 //
 
 type DatabaseMessage =
     | Set of Guid*string
-    | Get of Guid*AsyncReplyChannel<string option>
+    | GetAsync of Guid*AsyncReplyChannel<string option>
+    | Get of Guid
+    | Subscribe of Guid*(string -> unit) // Placeholder for subscription logic
+
+module Map =
+    let append key value map =
+        match Map.tryFind key map with
+        | Some items -> Map.add key (value:: items) map
+        | None -> Map.add key [value] map
+    let pop key map =
+        match Map.tryFind key map with
+        | Some items ->
+            Map.remove key map, items
+        | None -> map, []
+            
 
 module DatabaseMailbox =
     [<TailCall>]
-    let rec loop databaseFactory (inbox: MailboxProcessor<DatabaseMessage>)  =
+    let rec loop databaseFactory  subscribers (inbox: MailboxProcessor<DatabaseMessage>) =
+                
                 async {
                     let! msg = inbox.Receive()
                     match msg with
@@ -18,17 +35,56 @@ module DatabaseMailbox =
                         let db = databaseFactory true
                         Database.write db key value
                         do! db.DisposeAsync()
-                        return! loop databaseFactory inbox                        
-                    | Get (key, reply) ->
+                        return! loop databaseFactory subscribers inbox 
+                    | GetAsync (key, reply) ->
                         let db = databaseFactory false
                         Database.read db key
                         |> reply.Reply
                         do! db.DisposeAsync()
-                        return! loop databaseFactory inbox
+                        return! loop databaseFactory subscribers inbox 
+                    | Get key ->
+                        let db = databaseFactory false
+                        let value = Database.read db key
+                        let map, subscribers =
+                            Map.pop key subscribers
+                        do! db.DisposeAsync()
+                        return! loop databaseFactory Map.empty inbox
+                    | Subscribe (guid, thunk) ->
+                        return!
+                            Map.append guid thunk subscribers
+                            |> loop databaseFactory
+                            <| inbox
                 }
     let create databaseFactory =
-        MailboxProcessor<DatabaseMessage>.Start( loop databaseFactory )    
+        MailboxProcessor<DatabaseMessage>.Start( loop databaseFactory [])    
+module Socket =
     
+    let handShake (handler: WebSocket -> Async<unit>) (next: HttpFunc) (ctx: HttpContext) =
+        task {
+            if ctx.WebSockets.IsWebSocketRequest then
+                let! webSocket = ctx.WebSockets.AcceptWebSocketAsync() 
+                do! handler webSocket
+                return! Successful.ok (text "WebSocket connection established.") next ctx
+            else
+                return! RequestErrors.badRequest (text "WebSocket request expected.") next ctx
+        }
+    
+    let webSocketHandler (websocket: WebSocket)=
+        let buffer = Array.zeroCreate<byte> (1024* 4)
+        let rec loop () =
+            async {
+                let! result = websocket.ReceiveAsync(ArraySegment<byte>(buffer), System.Threading.CancellationToken.None) |> Async.AwaitTask
+                if result.MessageType = WebSocketMessageType.Close then
+                    do! websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", System.Threading.CancellationToken.None) |> Async.AwaitTask
+                else
+                    let message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count)
+                    printfn "Received message: %s" message
+                    // Echo the message back
+                    do! websocket.SendAsync(ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, true, System.Threading.CancellationToken.None)|> Async.AwaitTask
+                    return! loop ()
+            }
+        loop ()
+        
 module App =
     
     open System.IO
@@ -38,7 +94,7 @@ module App =
     open Microsoft.Extensions.Hosting
     open Microsoft.Extensions.Logging
     open Microsoft.Extensions.DependencyInjection
-    open Giraffe
+    
 
     let WIDTH =
         1000 // Width of the message in bytes, adjust as needed
@@ -77,7 +133,7 @@ module App =
             next ctx
     let asyncGetHandler (mailbox: MailboxProcessor<DatabaseMessage>) (token: Guid) next ctx =
         task {
-            let! value = mailbox.PostAndAsyncReply (fun reply -> DatabaseMessage.Get(token, reply))
+            let! value = mailbox.PostAndAsyncReply (fun reply -> DatabaseMessage.GetAsync(token, reply))
             match  value with
             | Some v -> 
                 return! Successful.ok (text $"{v}") next ctx
@@ -92,9 +148,10 @@ module App =
         |> warbler  
     //    ---------------------------------    
     let webApp mailbox =
-        choose [
+        choose [            
             GET >=>
-                choose [                
+                choose [
+                    route "/ws" >=> Socket.handShake Socket.webSocketHandler
                     subRoute "/api" (
                         choose [
                                  routef "/get/%s" (parseToken (asyncGetHandler mailbox ))                              
@@ -154,6 +211,7 @@ module App =
         | false ->
             app .UseGiraffeErrorHandler(errorHandler)
                 .UseHttpsRedirection())
+            .UseWebSockets()
             .UseCors(configureCors)
             .UseStaticFiles()
             .UseGiraffe(
