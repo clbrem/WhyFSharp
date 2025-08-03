@@ -1,0 +1,14 @@
+{
+  "name": "whyfsharp.web.test",
+  "version": "1.0.0",
+  "description": "Unit tests for WhyFSharp.web",
+  "main": "index.js",
+  "scripts": {
+    "test": "web-test-runner ./*.Test.fs.js --watch"
+  },
+  "author": "clbrem.me",
+  "license": "ISC",
+  "devDependencies": {
+    "@web/test-runner": "^0.20.2"
+  }
+}
