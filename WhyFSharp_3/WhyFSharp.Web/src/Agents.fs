@@ -6,8 +6,13 @@ module Cmd =
         let perform<'S,'T> (agent: MailboxProcessor<Dispatch<'S> * 'T>) (message:'T) = 
             Cmd.ofEffect (fun dispatch -> agent.Post(dispatch, message))
         
-        let attempt<'S,'T> (agent: MailboxProcessor<'S>) (handler: exn -> 'T) =
-            Cmd.ofEffect (fun dispatch -> agent.Error.Add(handler >> dispatch))
+        let attempt<'S,'T> (agent: MailboxProcessor<Dispatch<'S> *'T>) (msg: 'T) (handler: exn -> 'S) =
+            Cmd.ofEffect (
+                fun dispatch ->
+                    agent.Error.Add(handler >> dispatch)
+                    agent.Post(dispatch, msg)
+                    )
+            
         
         let either<'S,'T> (agent: MailboxProcessor<Dispatch<'S> * 'T>) (message: 'T) (handler : exn -> 'S) =
             Cmd.ofEffect (
