@@ -56,7 +56,7 @@ module DatabaseMailbox =
                             <| inbox
                 }
     let create databaseFactory =
-        MailboxProcessor<DatabaseMessage>.Start( loop databaseFactory [])    
+        MailboxProcessor<DatabaseMessage>.Start( loop databaseFactory Map.empty)    
 module Socket =
     
     let handShake (handler: WebSocket -> Async<unit>) (next: HttpFunc) (ctx: HttpContext) =
