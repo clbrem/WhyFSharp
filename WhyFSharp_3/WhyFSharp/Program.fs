@@ -10,7 +10,7 @@ type DatabaseMessage =
     | Set of Guid*string
     | GetAsync of Guid*AsyncReplyChannel<string option>
     | Get of Guid
-    | Subscribe of Guid*(string -> unit) // Placeholder for subscription logic
+    | Subscribe of Guid*(string option -> unit) // Placeholder for subscription logic
 
 module Map =
     let append key value map =
@@ -44,11 +44,13 @@ module DatabaseMailbox =
                         return! loop databaseFactory subscribers inbox 
                     | Get key ->
                         let db = databaseFactory false
-                        let value = Database.read db key
+                        let value = Database.read db key 
                         let map, subscribers =
                             Map.pop key subscribers
+                        for subscriber in subscribers do
+                            subscriber value
                         do! db.DisposeAsync()
-                        return! loop databaseFactory Map.empty inbox
+                        return! loop databaseFactory map inbox
                     | Subscribe (guid, thunk) ->
                         return!
                             Map.append guid thunk subscribers
@@ -57,8 +59,7 @@ module DatabaseMailbox =
                 }
     let create databaseFactory =
         MailboxProcessor<DatabaseMessage>.Start( loop databaseFactory Map.empty)    
-module Socket =
-    
+module Socket =    
     let handShake (handler: WebSocket -> Async<unit>) (next: HttpFunc) (ctx: HttpContext) =
         task {
             if ctx.WebSockets.IsWebSocketRequest then
@@ -67,12 +68,11 @@ module Socket =
                 return! Successful.ok (text "WebSocket connection established.") next ctx
             else
                 return! RequestErrors.badRequest (text "WebSocket request expected.") next ctx
-        }
-    
-    let webSocketHandler (websocket: WebSocket)=
-        let buffer = Array.zeroCreate<byte> (1024* 4)
+        } 
+    let webSocketHandler (websocket: WebSocket) =
+        let buffer = Array.zeroCreate<byte> (1024* 4)        
         let rec loop () =
-            async {
+            async {                
                 let! result = websocket.ReceiveAsync(ArraySegment<byte>(buffer), System.Threading.CancellationToken.None) |> Async.AwaitTask
                 if result.MessageType = WebSocketMessageType.Close then
                     do! websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", System.Threading.CancellationToken.None) |> Async.AwaitTask
