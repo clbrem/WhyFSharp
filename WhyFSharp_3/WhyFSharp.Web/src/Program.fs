@@ -90,7 +90,7 @@ let update config msg model =
             Handle
 
 let render model dispatch =
-            
+// Please style this page so that the input container is centered vertically            
     Html.div [
         prop.key "ParentWindow"
         prop.className ["flex"; "flex-row"; "justify-center"; "items-center"; "gap-4"; "w-full"; "max-w-4xl"; "mx-auto"; ]
@@ -98,7 +98,7 @@ let render model dispatch =
             Html.div [
                 prop.key "MainContainer"
                 prop.className [
-                    "flex"; "flex-col"; "items-center"; "justify-center"; "gap-4";"my-16"
+                    "pr-15";"min-h-screen"; "items-center";"flex"; "flex-col"; "items-center"; "justify-center"; "gap-4";"my-16"
                 ]
                 prop.children [
                     Html.div [

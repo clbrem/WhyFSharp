@@ -70,17 +70,18 @@ module Socket =
                 return! RequestErrors.badRequest (text "WebSocket request expected.") next ctx
         } 
     let webSocketHandler (websocket: WebSocket) =
-        let buffer = Array.zeroCreate<byte> (1024* 4)        
+        let buffer = Array.zeroCreate<byte> (1024* 4)
+        let bufferSlice = Memory(buffer)
         let rec loop () =
             async {                
-                let! result = websocket.ReceiveAsync(ArraySegment<byte>(buffer), System.Threading.CancellationToken.None) |> Async.AwaitTask
+                let! result = websocket.ReceiveAsync(bufferSlice, System.Threading.CancellationToken.None).AsTask() |> Async.AwaitTask 
                 if result.MessageType = WebSocketMessageType.Close then
                     do! websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", System.Threading.CancellationToken.None) |> Async.AwaitTask
                 else
                     let message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count)
                     printfn "Received message: %s" message
                     // Echo the message back
-                    do! websocket.SendAsync(ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, true, System.Threading.CancellationToken.None)|> Async.AwaitTask
+                    do! websocket.SendAsync(bufferSlice, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None).AsTask()|> Async.AwaitTask
                     return! loop ()
             }
         loop ()
