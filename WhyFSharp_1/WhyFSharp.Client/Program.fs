@@ -31,7 +31,7 @@ module Client =
     let writeAsync (client: HttpClient) (message: string) =
         task {
             let! resp = client.PostAsync("set", new FormUrlEncodedContent([KeyValuePair("text", message)]))
-            if resp.StatusCode <> System.Net.HttpStatusCode.OK then
+            if not resp.IsSuccessStatusCode then
                 failwithf "Failed to write message: %A" resp.StatusCode            
             let! content = resp.Content.ReadAsStringAsync()
             return Guid.Parse(content)
@@ -51,12 +51,11 @@ let main _ =
     let toDo =  
         async {
             use client = Client.client()
-            let! guid = Client.writeAsync client (Random.string 1001 rnd) 
+            let! guid = Client.writeAsync client (Random.string 1000 rnd) 
             let! found = Client.lookupAsync client guid
             printfn $"Found: %s{found}"
             return 0
         }
-    (toDo
-    |> Async.StartAsTask
+    (toDo |> Async.StartAsTask
     ).GetAwaiter().GetResult()
     

@@ -51,10 +51,10 @@ module Database =
             let loc = db.Position / (int64 (width + GUID_SIZE + NEWLINE_SIZE))
             let pos = db.Seek(int64 (width + 1), SeekOrigin.Current)
             if pos >= db.Length then
-                (key, loc) :: acc |> List.map KeyValuePair |> Dictionary
+                KeyValuePair(key, loc) :: acc |> Dictionary
             else                                        
-                (key, loc) :: acc |> scanLoop width db buffer
-        | _ -> acc |> List.map KeyValuePair |> Dictionary
+                KeyValuePair(key, loc) :: acc |> scanLoop width db buffer
+        | _ -> acc |> Dictionary
     // Scan a database to create the index
     
     let private scan width (db: #Stream) =
@@ -120,16 +120,13 @@ module Database =
     
     // Read an entry from the database    
     let read database (key: Guid) =
-        let db, width, index = database.stream, database.width, database.index
-        
+        let db, width, index = database.stream, database.width, database.index        
         database.logger
-        |> Option.iter _.LogInformation("Reading key: {key}",key)
-        
+        |> Option.iter _.LogInformation("Reading key: {key}",key)        
         let buffer = ArrayPool.Shared.Rent(width + GUID_SIZE)        
         try 
             match index.TryGetValue(key) with
-            | true, line ->
-                
+            | true, line ->                
                 let pos = line * (int64 (width + PADDING))
                 db.Seek(pos, SeekOrigin.Begin) |> ignore // Go to correct position
                 match db with
