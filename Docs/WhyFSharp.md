@@ -2,10 +2,10 @@
 1. **Basics**
     - Released (1.0) by Microsoft Research/Don Syme in 2005
     - Supported in Visual Studio 2010
+    - .NET language (compiles to IL)- 
+    - ML family (OCaml, Haskell, Rust, etc.)
     - Functional (First class functions, immutability, etc.)
     - Object-oriented
-    - ML family (OCaml, Haskell, Rust, etc.)
-    - .NET language (compiles to IL)
     - Indentation based syntax (No braces, no semicolons)
     - Linear compiler
     - Partial application
@@ -19,9 +19,9 @@
       3 |> add 2 |> add 5 // 10        
       ```
 2. **Type Inference**
-3. **Railway Oriented Programming**
-4. **Union Types**/**Active Patterns**
-5. **Computation Expressions**
+3. **Railway Oriented Programming** 
+4. **Computation Expressions**
+5. **Union Types**/**Active Patterns**
 6. **Tail Recursion**
 7. **Mailbox Processor**
 8. **Fable**
