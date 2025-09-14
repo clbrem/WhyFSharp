@@ -93,7 +93,7 @@ module App =
             .UseCors(configureCors)
             .UseStaticFiles()
             .UseGiraffe(
-                webApp 
+                webApp database
                 )
     
     let configureServices (services : IServiceCollection) =
