@@ -25,15 +25,26 @@ module App =
     
     let stub =
         ServerErrors.notImplemented (text "Method Not Implemented")
+    let parseToken handler (s: string)=
+        match Guid.TryParse(s) with
+        | true, guid -> handler guid
+        | false, _  -> RequestErrors.badRequest (text "Invalid token format. Expected a valid GUID.")
+    let getHandler databaseFactory (token: Guid) =
+        use database = databaseFactory false
+        match Database.read database token with 
+        | Some value -> 
+            Successful.ok (text $"{value}") // Placeholder for get handler
+        | None -> 
+            RequestErrors.notFound (text "Token not found in the database.")
 
     //    ---------------------------------    
-    let webApp  =
+    let webApp  database =
         choose [
             GET >=>
                 choose [                
                     subRoute "/api" (
                         choose [
-                                 routef "/get/%s" (fun _ -> stub)                              
+                                 routef "/get/%s" (parseToken (getHandler database ))   
                              ]
                         )                  
                 ]
