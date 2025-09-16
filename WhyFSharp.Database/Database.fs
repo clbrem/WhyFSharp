@@ -53,7 +53,7 @@ module Database =
             if pos >= db.Length then
                 KeyValuePair(key, loc) :: acc |> Dictionary
             else                                        
-                KeyValuePair(key, loc) :: acc |> scanLoop width db buffer
+                scanLoop width db buffer (KeyValuePair(key, loc) :: acc)
         | _ -> acc |> Dictionary
     // Scan a database to create the index
     
