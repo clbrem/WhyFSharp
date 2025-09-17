@@ -41,12 +41,12 @@ module App =
     let webApp  database =
         subRoute "/api" (
           choose [
+            POST >=>
+              route "/set" >=> stub
             GET >=>
               routef "/get/%s" (
                   parseToken (getHandler database )
-                  )                       
-            POST >=>
-              route "/set" >=> stub
+                  )                                   
             setStatusCode 404 >=> text "Not Found"
           ]
         )
