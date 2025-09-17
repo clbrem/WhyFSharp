@@ -11,8 +11,3 @@ text=Hello NHDNUG
 ###
 
 GET http://localhost:8080/api/get/{{token}}
-
-###
-
-
-GET http://localhost:8080/api/get/123

@@ -39,25 +39,17 @@ module App =
 
     //    ---------------------------------    
     let webApp  database =
-        choose [
+        subRoute "/api" (
+          choose [
             GET >=>
-                choose [                
-                    subRoute "/api" (
-                        choose [
-                                 routef "/get/%s" (parseToken (getHandler database ))   
-                             ]
-                        )                  
-                ]
+              routef "/get/%s" (
+                  parseToken (getHandler database )
+                  )                       
             POST >=>
-                choose [
-                    subRoute"/api" (
-                        choose [
-                           route "/set" >=> stub
-                           ]
-                     )
-                ]
-    
-            setStatusCode 404 >=> text "Not Found" ]
+              route "/set" >=> stub
+            setStatusCode 404 >=> text "Not Found"
+          ]
+        )
     
     // ---------------------------------
     // Error handler
