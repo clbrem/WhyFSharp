@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{D3CEDD79-A
 		Docs\WhyFSharp.md = Docs\WhyFSharp.md
 		WhyFSharp.http = WhyFSharp.http
 		Docs\f-seeklogo.svg = Docs\f-seeklogo.svg
+		Docs\railway.png = Docs\railway.png
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WhyFSharp.Database", "WhyFSharp.Database\WhyFSharp.Database.fsproj", "{8298836E-3176-459E-858A-749CD377693A}"
