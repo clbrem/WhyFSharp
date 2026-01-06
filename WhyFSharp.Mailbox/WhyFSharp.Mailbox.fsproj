@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RootNamespace>WhyFSharp.Mailbox</RootNamespace>
     </PropertyGroup>
@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Update="FSharp.Core" Version="9.0.300" />
+      <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
 
 </Project>
